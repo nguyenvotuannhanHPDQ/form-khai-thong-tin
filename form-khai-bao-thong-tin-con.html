@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Khai báo thông tin 1/6 - Portal Công ty</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .hidden { display: none; }
+  </style>
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+  <h2 class="mb-4">Khai báo thông tin</h2>
+  
+  <!-- Bước 1: Chọn thay đổi hay không -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">1. Thông tin trên App nhân sự</h5>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="changeInfo" id="noChange" value="no">
+        <label class="form-check-label" for="noChange">Không thay đổi</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="changeInfo" id="hasChange" value="yes">
+        <label class="form-check-label" for="hasChange">Có thay đổi / bổ sung</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bước 2: Form khai báo (cho "Có thay đổi") -->
+  <form id="infoForm" class="hidden" enctype="multipart/form-data">
+    
+    <!-- Thông tin Vợ/Chồng -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">2. Thông tin Vợ/Chồng</h5>
+        <div class="mb-3">
+          <label for="spouseName" class="form-label">Tên Vợ/Chồng</label>
+          <input type="text" class="form-control" id="spouseName" name="spouseName" required>
+        </div>
+        <div class="mb-3">
+          <label for="spouseBirthYear" class="form-label">Năm sinh Vợ/Chồng</label>
+          <input type="number" class="form-control" id="spouseBirthYear" name="spouseBirthYear" required min="1900" max="2025">
+        </div>
+      </div>
+    </div>
+
+    <!-- Thông tin Con cái -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">3. Thông tin Con</h5>
+        <div id="childrenList"></div>
+        <button type="button" class="btn btn-secondary" id="addChildBtn">Thêm Con</button>
+      </div>
+    </div>
+
+    <!-- Xác nhận -->
+    <div class="mb-3 form-check">
+      <input type="checkbox" class="form-check-input" id="confirmCheckChange" required>
+      <label class="form-check-label" for="confirmCheckChange">Tôi xác nhận thông tin trên là đúng</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Gửi khai báo</button>
+  </form>
+
+  <!-- Form xác nhận nếu Không thay đổi -->
+  <form id="noChangeForm" class="hidden">
+    <div class="mb-3 form-check">
+      <input type="checkbox" class="form-check-input" id="confirmCheckNoChange" required>
+      <label class="form-check-label" for="confirmCheckNoChange">Tôi xác nhận không có thay đổi thông tin</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Gửi xác nhận</button>
+  </form>
+
+</div>
+
+<script>
+  const changeRadios = document.getElementsByName('changeInfo');
+  const infoForm = document.getElementById('infoForm');
+  const noChangeForm = document.getElementById('noChangeForm');
+  const childrenList = document.getElementById('childrenList');
+  const addChildBtn = document.getElementById('addChildBtn');
+
+  // Xử lý radio chọn
+  changeRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
+      if (this.value === 'yes') {
+        infoForm.classList.remove('hidden');
+        noChangeForm.classList.add('hidden');
+      } else {
+        noChangeForm.classList.remove('hidden');
+        infoForm.classList.add('hidden');
+      }
+    });
+  });
+
+  // Thêm 1 dòng thông tin con
+  addChildBtn.addEventListener('click', () => {
+    const index = childrenList.children.length + 1;
+    const childDiv = document.createElement('div');
+    childDiv.classList.add('border', 'p-3', 'mb-3', 'rounded', 'position-relative');
+    childDiv.innerHTML = `
+      <button type="button" class="btn-close position-absolute top-0 end-0 m-2 removeChildBtn" aria-label="Xóa"></button>
+      <h6>Con ${index}</h6>
+      <div class="mb-3">
+        <label class="form-label">Tên Con</label>
+        <input type="text" class="form-control" name="childName[]" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Năm sinh</label>
+        <input type="number" class="form-control" name="childBirthYear[]" required min="2000" max="2025">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Giấy khai sinh (PDF, JPG)</label>
+        <input type="file" class="form-control" name="birthCertificate[]" accept=".pdf,.jpg,.jpeg,.png" required>
+      </div>
+    `;
+    childrenList.appendChild(childDiv);
+
+    // Gán sự kiện Xóa ngay sau khi thêm mới
+    childDiv.querySelector('.removeChildBtn').addEventListener('click', () => {
+      childDiv.remove();
+      updateChildTitles();
+    });
+  });
+
+  // Cập nhật lại tiêu đề "Con 1", "Con 2" sau khi xóa
+  function updateChildTitles() {
+    const children = childrenList.querySelectorAll('div.border');
+    children.forEach((child, idx) => {
+      const title = child.querySelector('h6');
+      if (title) {
+        title.textContent = `Con ${idx + 1}`;
+      }
+    });
+  }
+
+  // Validate form có thay đổi
+  infoForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Kiểm tra số lượng con
+    const childCount = childrenList.querySelectorAll('div.border').length;
+    if (childCount === 0) {
+      alert('Chưa khai báo thông tin Con của bạn');
+      return;
+    }
+
+    if (this.checkValidity()) {
+      alert('Thông tin đã được gửi thành công!');
+      this.reset();
+      childrenList.innerHTML = '';
+      infoForm.classList.add('hidden');
+      noChangeForm.classList.add('hidden');
+    } else {
+      this.reportValidity();
+    }
+  });
+
+  // Validate form không thay đổi
+  noChangeForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (this.checkValidity()) {
+      alert('Xác nhận không thay đổi thành công!');
+      this.reset();
+      infoForm.classList.add('hidden');
+      noChangeForm.classList.add('hidden');
+    } else {
+      this.reportValidity();
+    }
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
